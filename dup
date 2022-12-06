@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -x
+
+src=$1
+dst=$2
+
+rm ${src}/*~
+cp -r ${src} ${dst}
+
+bsrc=$(basename ${src})
+bdst=$(basename ${dst})
+
+mv ${dst}/${bsrc}.cabal ${dst}/${bdst}.cabal
+rm ${dst}/input-?.txt ${dst}/sample-input-?.txt
+sed -i -e s/${bsrc}/${bdst}/ ${dst}/${bdst}.cabal
