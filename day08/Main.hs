@@ -1,6 +1,6 @@
 module Main where
 
-import Data.List (nub, transpose, concat)
+import Data.List (nub, transpose, reverse, concat, inits, tails, zipWith, maximum)
 import Data.List.Index (imap, ifoldl)
 import Data.Tuple (swap)
 import Debug.Trace
@@ -13,7 +13,12 @@ main = do
     maxx = length (head heights)
     maxy = length heights
     locs = getVisibleLocs maxx maxy heights
+
+    hviews = findViews heights
+    vviews = (transpose . findViews . transpose) heights
+    views = zipWith (*) (concat hviews) (concat vviews)
   putStrLn $ (show . length) locs
+  putStrLn $ (show . maximum) views
 
 getLines = fmap lines . readFile
 
@@ -42,3 +47,27 @@ getVisibleLocs maxx maxy hs =
 
 revCoordX :: Int -> (Int, Int) -> (Int, Int)
 revCoordX max (x, y) = (max-x-1, y)
+
+findViews :: [[Int]] -> [[Int]]
+findViews = map viewsRow
+
+viewsRow :: [Int] -> [Int]
+viewsRow hs =
+  let
+    rights = rightView hs
+    lefts = (reverse . rightView . reverse) hs
+  in
+    zipWith (*) rights lefts
+
+rightView :: [Int] -> [Int]
+rightView hs =
+  let
+    rhs = (tail . tails) hs
+    params = zip hs rhs
+    countTaller (h, hs') =
+      let
+        (shorter, taller) = span (< h) hs'
+      in
+        length shorter + if (length taller) > 0 then 1 else 0
+  in
+    map countTaller params
