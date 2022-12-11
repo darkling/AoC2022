@@ -1,6 +1,7 @@
 module Main where
 
 import Data.List (mapAccumL)
+import Data.List.Split (chunksOf)
 import Debug.Trace
 
 main :: IO ()
@@ -10,8 +11,11 @@ main = do
     ins = (map parseInstruction lines) ++ [Halt]
     state = traceShowId $ (makeIntervals . ((0, 1):) . trackState 1 . ticks) ins
     stateSamples = sample state (takeWhile (<= 220) [20, 60..])
-    result = (sum . map (uncurry (*))) stateSamples
-  putStrLn $ show $ result
+    strength = (sum . map (uncurry (*))) stateSamples
+    leds = (map charOutput . traceShowId . zip [0..] . take 240 . unpackIntervals) state
+    output = unlines (chunksOf 40 leds)
+  putStrLn $ show $ strength
+  putStrLn output
 
 getLines = fmap lines . readFile
 
@@ -65,3 +69,11 @@ sample _ [] = []
 sample (((u, u'), rx):ss) (t:ts)
   | u < t && t <= u' = (t, rx):(sample ss ts)
   | otherwise = sample ss (t:ts)
+
+unpackIntervals :: [((Int, Int), Int)] -> [Int]
+unpackIntervals = concat . map (\ ((t, t'), rx) -> replicate (t'-t) rx)
+
+charOutput :: (Int, Int) -> Char
+charOutput (cyc, sp)
+  | abs ((cyc `mod` 40)-sp) <= 1 = '#'
+  | otherwise = ' '
